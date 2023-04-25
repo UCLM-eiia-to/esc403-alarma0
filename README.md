@@ -1,40 +1,34 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- |
+# Generación automática de FSM
 
-# Hello World Example
+Este repositorio es un ejemplo de uso de la generación automática de código C++ a partir de máquinas de estado especificadas con [Ptolemy II](https://ptolemy.berkeley.edu/ptolemyII/index.htm).
 
-Starts a FreeRTOS task to print "Hello World".
+Se utiliza una serie de convenios para dirigir la generación automática. Así, por ejemplo, es posible indicar si una entrada o salida corresponde a un pin digital y en ese caso realiza *debouncing* automático.
 
-(See the README.md file in the upper level 'examples' directory for more information about examples.)
+## Estructura del ejemplo
 
-## How to use example
-
-Follow detailed instructions provided specifically for this example. 
-
-Select the instructions depending on Espressif chip installed on your development board:
-
-- [ESP32 Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/stable/get-started/index.html)
-- [ESP32-S2 Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/get-started/index.html)
-
-
-## Example folder contents
-
-The project **hello_world** contains one source file in C language [hello_world_main.c](main/hello_world_main.c). The file is located in folder [main](main).
-
-ESP-IDF projects are built using CMake. The project build configuration is contained in `CMakeLists.txt` files that provide set of directives and instructions describing the project's source files and targets (executable, library, or both). 
-
-Below is short explanation of remaining files in the project folder.
+El proyecto es un esqueleto de la práctica de la asignatura para el curso 2022/2023. La estructura es la siguiente:
 
 ```
 ├── CMakeLists.txt
-├── pytest_hello_world.py      Python script used for automated testing
+├── model
+│   ├── timer.xml
+│   └── ...
 ├── main
 │   ├── CMakeLists.txt
-│   └── hello_world_main.c
-└── README.md                  This is the file you are currently reading
+│   ├── fsm.hh                Implementación genérica de máquinas de estado en C++
+│   ├── fsm.cc                Implementación genérica de máquinas de estado en C++
+│   └── main.cc               Ejemplo de programa principal
+├── script
+│   ├── pt2cpp.py             Transforma XML de Ptolemy II en C++
+│   └── pt2cpp.xsl            Transformaciones XSL utilizada por el script anterior
+└── README.md                 Este archivo
 ```
 
-For more information on structure and contents of ESP-IDF projects, please refer to Section [Build System](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/build-system.html) of the ESP-IDF Programming Guide.
+El archivo `CMakeLists.txt` de la carpeta principal contiene instrucciones para generar automáticamente el código C++ para todas las máquinas guardadas en la carpeta `model`.  Aunque solo se muestra como ejemplo `timer.xml` este proyecto está diseñado para tres máquinas de estado, que deberían encontrarse en la carpeta `model`:
+
+* `timer.xml` es una máquina de estado con una única entrada GPIO `boton` y dos salidas `timeout1s` y `timeout10s`.  Activa la salida `timeout1s` cuando pasan `TO1S` iteraciones de la máquina de estados sin que se active el `boton`. Activa la salida `timeout10s` cuando pasan `TO10S` iteraciones de la máquina de estados sin que se active el `boton`.
+* `codigo.xml` es una máquina de estados con tres entradas, una entrada GPIO `boton`, y dos entradas `timeout1s` y `timeout10s`.  Solo tiene una salida `codigo_correcto`, que se activa cuando el usuario introduce el código correcto con el método que indica el enunciado de la práctica.
+* `alarma.xml` es una máquina de estados 
 
 ## Troubleshooting
 
