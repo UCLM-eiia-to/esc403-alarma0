@@ -131,4 +131,63 @@ public:
     {}
 ```
 
-## Implementación genérica de FSM `fsm.hh` y `fsm.cc`
+La tabla de transiciones se pone como una secuencia de objetos `transition` con cuatro elementos, el estado origen, la función de guarda, el estado destino y la función de salida.
+
+``` C++
+transition{
+            Pasillo::APAGADA, [this](){ return timeout; },
+            Pasillo::ENCENDIDA, [this](){ lampara = false; ; }
+        },
+```
+
+La función de guarda debe ser un objeto funcional sin argumentos que devuelve un valor de tipo `bool`.  Lo normal es utilizar *funciones lambda*. Fíjate que si en las funciones lambda capturas el puntero `this` puedes usar todos los campos de la clase como si fuera un método.
+
+Las entradas y salidas GPIO se inician con el valor de su número de pin:
+
+``` C++
+    boton{BOTON},
+    // ...
+    lampara{LAMPARA},
+```
+
+Las entradas que no son GPIO se configuran de manera que por defecto lean el valor de la salida conectada:
+
+``` C++
+    timeout{[this](){ return _timeout; }},
+```
+
+Y las referencias a las salidas que se conectan a las entradas se inicializan con un parámetro extra del constructor:
+
+``` C++
+public:
+    pasillo(const output<bool>& ext_timeout) :
+    // ...
+    _timeout{ext_timeout}
+```
+
+## Programa principal
+
+Con esto ya podemos usar la clase en el programa principal.  Instanciamos un temporizador, que tiene al menos una salida booleana para conectar a la entrada `timeout`.  Instanciamos un `pasillo` pasando la salida del temporizador al constructor. Y finalmente hacemos composición síncrona de las dos máquinas de estado.
+
+``` C++
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+#include "timer.hh"
+#include "pasillo.hh"
+
+extern "C" void app_main();
+void app_main(void)
+{
+    timer t;
+    pasillo p{t.timeout10s};
+    fsm_composite fsm{t,p};
+    
+    TickType_t last = xTaskGetTickCount();
+    for(;;) {
+        fsm.iteration();
+        xTaskDelayUntil(&last, 200/portTICK_PERIOD_MS); // periodo 200ms
+    }
+}
+```
+
+La composición síncrona permite que todas las entradas se capturen antes de llamar a los `update` de las máquinas de estado, luego se llama a los `update` y finalmente se llama a las funciones para generar las salidas.  Esto garantiza las condiciones que permiten asumir la *hipótesis síncrona*, que es la base del análisis formal que haremos con **nuXmv**.
