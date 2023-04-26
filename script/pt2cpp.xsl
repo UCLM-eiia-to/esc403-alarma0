@@ -14,13 +14,15 @@
     <xsl:template match="entity" mode="FSM">
         <xsl:variable name="fsm" select="@name"/>
         <xsl:variable name="states" select="entity[@class='ptolemy.domains.modal.kernel.State']" />
-        <xsl:variable name="funcs" select="property[@name='Annotation']/property[@name='text']" />
-        <xsl:variable name="inputs" select="port[@class='ptolemy.actor.TypedIOPort' and property/@name='input']" />
-        <xsl:variable name="outputs" select="port[@class='ptolemy.actor.TypedIOPort' and property/@name='output']" />
+        <xsl:variable name="funcs" select="property[@class='ptolemy.vergil.kernel.attributes.TextAttribute']/property[@name='text']" />
+        <xsl:variable name="inputs" select="port[@class='ptolemy.actor.TypedIOPort' and property/@name='input' and not(property/@name='output')]" />
+        <xsl:variable name="outputs" select="port[@class='ptolemy.actor.TypedIOPort' and property/@name='output' and not(property/@name='input')]" />
         <xsl:variable name="gpio_inputs" select="port[@class='ptolemy.actor.SubscriberPort' and property/@name='input']" />
         <xsl:variable name="gpio_outputs" select="port[@class='ptolemy.actor.PublisherPort' and property/@name='output']" />
         <xsl:variable name="vars" select="property[@class='ptolemy.data.expr.Parameter']" />
         <xsl:variable name="extvars" select="property[@class='ptolemy.actor.parameters.SharedParameter']" />
+        <xsl:variable name="alt_vars" select="port[@class='ptolemy.actor.TypedIOPort' and property/@name='output' and property/@name='input']" />
+        <xsl:variable name="alt_extvars" select="port[@class='ptolemy.actor.parameters.ParameterPort']" />
         <xsl:variable name="links" select="link"/>
         <xsl:variable name="relations" select="relation"/>
 
@@ -41,6 +43,8 @@
             <xsl:with-param name="gpio_outputs" select="$gpio_outputs" />
             <xsl:with-param name="vars" select="$vars" />
             <xsl:with-param name="extvars" select="$extvars" />
+            <xsl:with-param name="alt_vars" select="$alt_vars" />
+            <xsl:with-param name="alt_extvars" select="$alt_extvars" />
             <xsl:with-param name="links" select="$links"/>
             <xsl:with-param name="relations" select="$relations"/>
         </xsl:call-template>        
@@ -70,6 +74,8 @@
         <xsl:param name="gpio_outputs"/>
         <xsl:param name="vars" />
         <xsl:param name="extvars" />
+        <xsl:param name="alt_vars" />
+        <xsl:param name="alt_extvars" />
         <xsl:param name="links" />
         <xsl:param name="relations" />
 
@@ -147,6 +153,13 @@
             <xsl:value-of select="@name"/>
             <xsl:text>;&#xa;</xsl:text>
         </xsl:for-each>
+        <xsl:for-each select="$alt_vars|$alt_extvars">
+            <xsl:text>    </xsl:text>
+            <xsl:call-template name="cpp-type"><xsl:with-param name="type" select="property[@name='_type']/@value"/></xsl:call-template>
+            <xsl:text> </xsl:text>
+            <xsl:value-of select="@name"/>
+            <xsl:text>;&#xa;</xsl:text>
+        </xsl:for-each>
 
         <!-- External outputs connected to inputs -->
         <xsl:for-each select="$inputs">
@@ -168,12 +181,18 @@
             <xsl:call-template name="cpp-type"><xsl:with-param name="type" select="property[@name='_type']/@value"/></xsl:call-template>
             <xsl:text>&gt;&amp; ext_</xsl:text>
             <xsl:value-of select="@name"/>
-            <xsl:if test="position()!=last() or count($extvars)>0">, </xsl:if>
+            <xsl:if test="position()!=last() or count($extvars|$alt_extvars)>0">, </xsl:if>
         </xsl:for-each>
         <xsl:for-each select="$extvars">
             <xsl:text>decltype(</xsl:text>
             <xsl:value-of select="@value"/>
             <xsl:text>) ext</xsl:text>
+            <xsl:value-of select="@name"/>
+            <xsl:if test="position()!=last() or count($alt_extvars)>0">, </xsl:if>
+        </xsl:for-each>
+        <xsl:for-each select="$alt_extvars">
+            <xsl:call-template name="cpp-type"><xsl:with-param name="type" select="property[@name='_type']/@value"/></xsl:call-template>
+            <xsl:text> ext</xsl:text>
             <xsl:value-of select="@name"/>
             <xsl:if test="position()!=last()">, </xsl:if>
         </xsl:for-each>
@@ -243,7 +262,7 @@
             <xsl:text>    </xsl:text>
             <xsl:value-of select="@name"/>
             <xsl:text>{}</xsl:text>
-            <xsl:if test="position()!=last() or count($vars|$extvars|$inputs)>0">,&#xa;</xsl:if>
+            <xsl:if test="position()!=last() or count($vars|$alt_vars|$extvars|$alt_extvars|$inputs)>0">,&#xa;</xsl:if>
         </xsl:for-each>
     
         <!-- State variable initialization -->
@@ -253,7 +272,16 @@
             <xsl:text>{</xsl:text>
             <xsl:value-of select="@value"/>
             <xsl:text>}</xsl:text>
-            <xsl:if test="position()!=last() or count($extvars|$inputs)>0">,&#xa;</xsl:if>
+            <xsl:if test="position()!=last() or count($alt_vars|$extvars|$alt_extvars|$inputs)>0">,&#xa;</xsl:if>
+        </xsl:for-each>
+
+        <xsl:for-each select="$alt_vars">    
+            <xsl:text>    </xsl:text>
+            <xsl:value-of select="@name"/>
+            <xsl:text>{</xsl:text>
+            <xsl:value-of select="property[@name='defaultValue']/@value"/>
+            <xsl:text>}</xsl:text>
+            <xsl:if test="position()!=last() or count($extvars|$alt_extvars|$inputs)>0">,&#xa;</xsl:if>
         </xsl:for-each>
 
         <xsl:for-each select="$extvars">    
@@ -262,9 +290,18 @@
             <xsl:text>{ext</xsl:text>
             <xsl:value-of select="@name"/>
             <xsl:text>}</xsl:text>
-            <xsl:if test="position()!=last() or count($inputs)>0">,&#xa;</xsl:if>
+            <xsl:if test="position()!=last() or count($alt_extvars|$inputs)>0">,&#xa;</xsl:if>
         </xsl:for-each>
     
+        <xsl:for-each select="$alt_extvars">
+            <xsl:text>    </xsl:text>
+            <xsl:value-of select="@name"/>
+            <xsl:text>{ext</xsl:text>
+            <xsl:value-of select="@name"/>
+            <xsl:text>}</xsl:text>
+            <xsl:if test="position()!=last() or count($inputs)>0">,&#xa;</xsl:if>
+        </xsl:for-each>
+
         <!-- External outputs connected to inputs -->
         <xsl:for-each select="$inputs">
             <xsl:text>    </xsl:text>

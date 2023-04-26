@@ -45,7 +45,7 @@ Para ilustrar el funcionamiento de la biblioteca veremos un ejemplo de FSM edita
 
 Debes prestar atención a las siguientes características:
 
-* Las entradas y salidas que no son GPIO deben ponerse como puertos de entrada y salida respectivamente, en la barra de herramientas. Es necesario configurar el tipo de los puertos haciendo click con el botón derecho en el lienzo y pinchando en *Customize→Ports*. Ten en cuenta que el tipo `[boolean]` es *array de booleanos*. Si lo que quieres es una entrada booleana debes seleccionar el tipo `boolean`.
+* Las entradas y salidas que no son GPIO deben ponerse como puertos de entrada y salida respectivamente, en la barra de herramientas. Es necesario configurar el tipo de los puertos haciendo click con el botón derecho en el lienzo y pinchando en *Customize → Ports*. Ten en cuenta que el tipo `[boolean]` es *array de booleanos*. Si lo que quieres es una entrada booleana debes seleccionar el tipo `boolean`.
 
 ![Configuración de puertos](img/puertos.png)
 
@@ -191,3 +191,11 @@ void app_main(void)
 ```
 
 La composición síncrona permite que todas las entradas se capturen antes de llamar a los `update` de las máquinas de estado, luego se llama a los `update` y finalmente se llama a las funciones para generar las salidas.  Esto garantiza las condiciones que permiten asumir la *hipótesis síncrona*, que es la base del análisis formal que haremos con **nuXmv**.
+
+## Modos alternativos de especificación
+
+Estamos experimentando con el uso de Vergil como herramienta de especificación y todavía no hemos llegado a una solución enteramente satisfactoria. Existen formas alternativas para especificar las variables de estado que pueden tener ventajas frente a lo que se explica arriba.
+
+Las variables de estado normales pueden especificarse también como puertos de entrada y salida, de la barra de herramientas.  Eso permite especificar el tipo de datos como en el resto de los puertos. La desventaja es que el valor por defecto, el que se usa en el momento de la construcción, no se muestra en el diagrama.
+
+Los parámetros externos para el constructor, que al final se comportan igual que las variables de estado, pueden especificarse como *Ports → PortParameter*.  Al igual que en el caso anterior, puede especificarse el tipo como en cualquier puerto.
