@@ -4,6 +4,22 @@ Este repositorio es un ejemplo de uso de la generación automática de código C
 
 Se utiliza una serie de convenios para dirigir la generación automática. Así, por ejemplo, es posible indicar si una entrada o salida corresponde a un pin digital y en ese caso realiza *debouncing* automático.
 
+## Prerrequisitos
+
+Es necesario tener `python` instalado y accesible desde la ruta del sistema.  También es necesario instalar el paquete python `lxml`.
+
+* Si usas la distribución estándar de python ejecuta en un terminal de órdenes lo siguiente.
+
+```
+python -m pip install lxml
+```
+
+* Si usas Anaconda ejecuta en un terminal de órdenes del entorno que se utilice (por defecto el entorno base) lo siguiente.
+
+```
+conda install lxml
+```
+
 ## Estructura del ejemplo
 
 El proyecto es un esqueleto de la práctica de la asignatura para el curso 2022/2023. La estructura es la siguiente:
